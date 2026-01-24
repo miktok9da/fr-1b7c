@@ -1,8 +1,8 @@
-name: Daily Auto Shorts with YouTube Upload
+name: Daily Auto Shorts with Multi-Platform Upload
 
 on:
   schedule:
-    - cron: "0 21 * * *"     # 10:00 PM Paris time (21:00 UTC in winter, 20:00 UTC in summer with DST)
+    - cron: "30 15 * * *"     # 9:00 PM India time (3:30 PM UTC)
   workflow_dispatch:
 
 jobs:
@@ -53,6 +53,8 @@ jobs:
         TWITTER_API_SECRET=${{ secrets.TWITTER_API_SECRET }}
         TWITTER_ACCESS_TOKEN=${{ secrets.TWITTER_ACCESS_TOKEN }}
         TWITTER_ACCESS_SECRET=${{ secrets.TWITTER_ACCESS_SECRET }}
+        VK_ACCESS_TOKEN=${{ secrets.VK_ACCESS_TOKEN }}
+        VK_GROUP_ID=${{ secrets.VK_GROUP_ID }}
         EOF
 
     - name: Check and generate topics if needed
@@ -63,7 +65,7 @@ jobs:
       run: |
         python main.py
 
-    - name: Upload to all platforms
+    - name: Upload to all platforms (YouTube, Instagram, TikTok, Facebook, Threads, Twitter, VK)
       env:
         # YouTube
         YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
