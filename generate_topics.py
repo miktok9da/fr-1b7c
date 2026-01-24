@@ -7,14 +7,22 @@ This script:
 3. Appends them to topics.txt
 """
 
+import os
 import requests
 from urllib.parse import quote
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def generate_new_topics(count=100):
-    """Generate new French topics about ancient women."""
-    
-    base_url = "https://text.pollinations.ai/"
+    """Generate new French topics about ancient women using paid Pollinations API."""
+
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        raise ValueError("POLLINATIONS_API_KEY environment variable is required for paid API")
+
     system = (
         "Tu es un historien spécialisé dans l'histoire des femmes dans les civilisations anciennes. "
         f"Crée une liste de {count} sujets uniques en français. "
@@ -22,14 +30,20 @@ def generate_new_topics(count=100):
         "Les sujets doivent couvrir : les lois, les coutumes, les femmes célèbres, les professions, la religion, la culture, l'art. "
         "Ne produis QUE les sujets, un par ligne, sans numéros ni marqueurs."
     )
-    
+
     prompt = f"Crée {count} sujets uniques sur les femmes dans les civilisations anciennes"
-    
-    url = base_url + quote(prompt)
-    params = {"model": "openai", "temperature": 0.9, "system": system}
-    
+
+    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    params = {
+        "model": "nova-fast",
+        "temperature": 0.9,
+        "system": system,
+        "json": False
+    }
+
     print(f"[topics] Generating {count} new French topics...")
-    r = requests.get(url, params=params, timeout=120)
+    r = requests.get(url, headers=headers, params=params, timeout=120)
     r.raise_for_status()
     
     # Parse topics
@@ -43,7 +57,7 @@ def generate_new_topics(count=100):
                 cleaned = cleaned[len(prefix):]
         # Remove numbering like "1. " or "1) "
         import re
-        cleaned = re.sub(r'^\d+[\.\:\)]\s*', '', cleaned)
+        cleaned = re.sub(r'^\d+[\.\:]\s*', '', cleaned)
         
         if cleaned and len(cleaned) > 5:
             topics.append(cleaned)

@@ -7,6 +7,10 @@ from pathlib import Path
 from urllib.parse import quote
 import requests
 import time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ---------------- CONFIG ----------------
 
@@ -52,8 +56,11 @@ def choose_topic_for_today():
     return topics[today.toordinal() % len(topics)]
 
 def generate_story_with_pollinations(topic: str) -> str:
-    """Generate a short French story about ancient women's history."""
-    base_url = "https://text.pollinations.ai/"
+    """Generate a short French story about ancient women's history using paid Pollinations API."""
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        raise ValueError("POLLINATIONS_API_KEY environment variable is required for paid API")
+
     system = (
         "Tu es un historien spécialisé dans l'histoire des femmes dans les civilisations anciennes. "
         "Écris une courte histoire intéressante de 30 secondes (80-130 mots) en français. "
@@ -62,11 +69,17 @@ def generate_story_with_pollinations(topic: str) -> str:
     )
     prompt = f"Sujet: {topic}. Raconte un fait historique intéressant."
 
-    url = base_url + quote(prompt)
-    params = {"model": "openai", "temperature": 1.0, "system": system}
+    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    params = {
+        "model": "nova-fast",
+        "temperature": 1.0,
+        "system": system,
+        "json": False
+    }
 
     print(f"[story] Generating French story for topic: {topic}")
-    r = requests.get(url, params=params, timeout=60)
+    r = requests.get(url, headers=headers, params=params, timeout=60)
     r.raise_for_status()
     text = r.text.strip()
 
