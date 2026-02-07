@@ -17,7 +17,7 @@ load_dotenv()
 NUM_IMAGES = 8  # 8 unique scenes (faster generation)
 IMAGE_WIDTH = 1080
 IMAGE_HEIGHT = 1920
-IMAGE_MODEL = "flux"
+IMAGE_MODEL = "flux" # or "flux-pro" if available for paid users
 
 STORY_MAX_WORDS = 130
 
@@ -148,10 +148,25 @@ def generate_image(scene: str, idx: int) -> Path:
     safe_prompt = quote(prompt)
     
     # Include seed to ensure unique image
-    url = (
-        f"https://image.pollinations.ai/prompt/{safe_prompt}"
-        f"?width={IMAGE_WIDTH}&height={IMAGE_HEIGHT}&model={IMAGE_MODEL}&seed={seed}"
-    )
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        print("[image] Warning: POLLINATIONS_API_KEY not found, image might be rate-limited or fail")
+    
+    # documentation says: https://gen.pollinations.ai/image/a%20cat?model=flux
+    # with Authorization: Bearer YOUR_API_KEY
+    url = f"https://gen.pollinations.ai/image/{safe_prompt}"
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    
+    params = {
+        "width": IMAGE_WIDTH,
+        "height": IMAGE_HEIGHT,
+        "model": IMAGE_MODEL,
+        "seed": seed,
+        "nologo": True,
+        "enhance": True
+    }
 
     out = IMAGES_DIR / f"scene_{idx:02d}.jpg"
     print(f"[image] Generating image {idx+1}/{NUM_IMAGES}: {scene[:50]}...")
@@ -161,7 +176,7 @@ def generate_image(scene: str, idx: int) -> Path:
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            r = requests.get(url, timeout=180)
+            r = requests.get(url, headers=headers, params=params, timeout=180)
             r.raise_for_status()
             out.write_bytes(r.content)
             time.sleep(2)  # Small delay between successful requests

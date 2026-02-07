@@ -10,7 +10,12 @@ import time
 def generate_french_topics_batch(batch_num, count=100):
     """Generate a batch of French topics."""
     
-    base_url = "https://text.pollinations.ai/"
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    base_url = "https://gen.pollinations.ai/text/"
     
     # Simpler system prompt
     system = (
@@ -24,12 +29,16 @@ def generate_french_topics_batch(batch_num, count=100):
     prompt = f"Generate {count} unique French topics about women in ancient civilizations"
     
     url = base_url + quote(prompt)
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    
     params = {"model": "openai", "temperature": 0.9, "system": system}
     
     print(f"[batch {batch_num}] Generating {count} French topics...")
     
     try:
-        r = requests.get(url, params=params, timeout=120)
+        r = requests.get(url, headers=headers, params=params, timeout=120)
         r.raise_for_status()
         
         # Parse topics
